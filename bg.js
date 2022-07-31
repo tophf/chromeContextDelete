@@ -1,24 +1,23 @@
-chrome.contextMenus.create({
-	id: "Delete", title: "&Delete text", contexts: ["editable"]
-}, function() { var clearError = chrome.runtime.lastError; });
+'use strict';
 
-chrome.contextMenus.onClicked.addListener(function(info, tab) {
-	chrome.tabs.executeScript({
-		allFrames: true,
-		matchAboutBlank: true,
-		code: getFunctionText(deleteTextInFrame).replace(/__url/, info.frameUrl || info.pageUrl)
-	});
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: 'Delete',
+    title: '&Delete text',
+    contexts: ['editable'],
+  });
 });
 
-function deleteTextInFrame() {
-	if (location.href == "__url" &&
-		document.activeElement &&
-		document.activeElement.localName.match(/^(input|textarea)$/))
-	{
-		document.execCommand("delete");
-	}
-}
-
-function getFunctionText(f) {
-	return f.toString().replace(/^.+?\{([\s\S]*?)\}$/, '$1');
-}
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  chrome.scripting.executeScript({
+    target: {
+      tabId: tab.id,
+      frameIds: [info.frameId || 0],
+    },
+    /* global document */
+    func: () => {
+      if (/^(input|textarea)$/.test(document.activeElement?.localName))
+        document.execCommand('delete');
+    },
+  });
+});
